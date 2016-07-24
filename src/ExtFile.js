@@ -27,7 +27,12 @@ export default class ExtFile {
 		let es5code = fs.readFileSync(file.path, "utf8")
 		let transformer = new lebab.Transformer(transformsMap)
 		let es6code = transformer.run(es5code)
-		this._ast = esprima.parse(es6code)
+		this._ast = esprima.parse(es6code, {
+			comment: true,
+			range: true,
+			tokens: true
+		})
+		this._ast = escodegen.attachComments(this._ast, this._ast.comments, this._ast.tokens)
 		this._resultAst = {}
 	}
 
