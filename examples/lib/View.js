@@ -5,4 +5,3 @@ Ext.define('CJ.core.ui.View', {
         return this.callParent(arguments);
     }
 });
-

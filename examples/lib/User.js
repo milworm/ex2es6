@@ -15,4 +15,3 @@ Ext.define('CJ.User', {
         console.log('Hello!');
     }
 });
-

@@ -3,6 +3,20 @@ const esprima = require("esprima")
 const estraverse = require("estraverse")
 const escodegen = require("escodegen")
 const _ = require('lodash')
+const lebab = require('lebab')
+
+const transformsMap = {
+  'class': true,
+  'template': true,
+  'arrow': true,
+  'let': true,
+  'default-param': true,
+  'arg-spread': true,
+  'obj-method': true,
+  'obj-shorthand': true,
+  'no-strict': true,
+  'commonjs': true,
+}
 
 export default class ExtFile {
 
@@ -10,8 +24,10 @@ export default class ExtFile {
 	 * @param {File} file
 	 */
 	constructor(file) {
-		let code = fs.readFileSync(file.path, "utf8")
-		this._ast = esprima.parse(code)
+		let es5code = fs.readFileSync(file.path, "utf8")
+		let transformer = new lebab.Transformer(transformsMap)
+		let es6code = transformer.run(es5code)
+		this._ast = esprima.parse(es6code)
 		this._resultAst = {}
 	}
 
@@ -24,7 +40,7 @@ export default class ExtFile {
 
 		if(type == 'ExpressionStatement') {
 			let {callee} = expression
-			let {type, object, property} = callee
+			let {type, object, property} = callee || {}
 
 			if(type == 'MemberExpression' && object.name == 'Ext' && property.name == 'define') {
 				let [className, classDefinition] = expression.arguments
@@ -161,10 +177,9 @@ export default class ExtFile {
 	_createClass(config) {
 		let {classDefinition, className, node} = config
 
-		this._functionsToMethods(classDefinition)
+		// this._functionsToMethods(classDefinition)
 		let requires = this._createImportDeclarations(classDefinition)
-		let newLine = this._createNewLine()
-		let body = _.flattenDeep([requires, newLine, node, newLine])
+		let body = _.flattenDeep([requires, this._createNewLine(), node])
 
         this._resultAst = {
         	"type": "Program",
