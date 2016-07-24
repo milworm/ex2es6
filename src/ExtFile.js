@@ -179,7 +179,13 @@ export default class ExtFile {
 
 		// this._functionsToMethods(classDefinition)
 		let requires = this._createImportDeclarations(classDefinition)
-		let body = _.flattenDeep([requires, this._createNewLine(), node])
+		let body = [requires]
+
+		if(requires.length)
+			body.push(this._createNewLine())
+
+		body.push(node)
+		body = _.flattenDeep(body)
 
         this._resultAst = {
         	"type": "Program",

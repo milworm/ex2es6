@@ -1,4 +1,3 @@
-
 Ext.define('CJ.constant', {
     singleton: true,
     request: {
