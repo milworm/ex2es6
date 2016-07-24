@@ -4,7 +4,9 @@ Ext.define('CJ.User', {
 	},
 
 	requires: [
-		'CJ.view.tool.media.Tool'
+		'CJ.view.tool.media.Tool',
+		'CJ.view.tool.media.Tool1',
+		'CJ.view.tool.media.Tool2'
 	],
 
 	config: {

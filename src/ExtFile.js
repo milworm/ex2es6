@@ -33,7 +33,8 @@ export default class ExtFile {
 
 				return {
 					className,
-					classDefinition
+					classDefinition,
+					node
 				}
 			}
 		}
@@ -119,15 +120,7 @@ export default class ExtFile {
 
 		return {
             "type": "ImportDeclaration",
-            "specifiers": [
-                {
-                    "type": "ImportDefaultSpecifier",
-                    "local": {
-                        "type": "Identifier",
-                        "name": src
-                    }
-                }
-            ],
+            "specifiers": [],
             "source": {
                 "type": "Literal",
                 "value": path
@@ -145,6 +138,20 @@ export default class ExtFile {
 	}
 
 	/**
+	 * @param {String} className
+	 * @return {String}
+	 */
+	_createExportDefault(className) {
+		return {
+			"type": "ExportDefaultDeclaration",
+            "declaration": {
+                "type": "Identifier",
+                name: className
+            }
+		}
+	}
+
+	/**
 	 * @param {Object} config
 	 * @param {String} config.className
 	 * @param {String} config.superClassName
@@ -152,16 +159,28 @@ export default class ExtFile {
 	 * @return {Object}
 	 */
 	_createClass(config) {
-		let {classDefinition} = config
-		let cls = this._createClassDeclaration(config)
+		let {classDefinition, className, node} = config
+
+		this._functionsToMethods(classDefinition)
 		let requires = this._createImportDeclarations(classDefinition)
-		let body = _.flattenDeep([requires, cls])
+		let newLine = this._createNewLine()
+		let body = _.flattenDeep([requires, newLine, node, newLine])
 
         this._resultAst = {
         	"type": "Program",
 		    "body": body,
 		    "sourceType": "module"
         }
+	}
+
+	/**
+	 * @return {Object}
+	 */
+	_createNewLine() {
+		return {
+			type: 'Identifier',
+            name: '\n'
+		}
 	}
 
 	/**
