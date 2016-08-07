@@ -276,10 +276,10 @@ export default class ExtFile {
 
 		// callParent(arguments)
 		if(firstArg.name == 'arguments')
-			node.arguments.push({
+			node.arguments[1] = {
 				type: 'Identifier',
             	name: 'args'
-			})
+			}
 	}
 
 	/**
