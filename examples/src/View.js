@@ -3,6 +3,14 @@
  */
 Ext.define('CJ.core.ui.View', {
 	extend: 'Ext.Component',
+
+	/**
+	 * @property {Array} requires
+	 */
+	requires: [
+		'Ext.dom.Element'
+	],
+
 	/**
 	 * @return {Object}
 	 */

@@ -1,8 +1,8 @@
-import 'app/view/block/ContentBlock'
-import 'app/view/map/edit/Container'
-import 'app/view/map/view/Container'
-import 'app/view/map/Options'
-import 'app/view/map/Scoreboard'
+import 'app/view/block/ContentBlock';
+import 'app/view/map/edit/Container';
+import 'app/view/map/view/Container';
+import 'app/view/map/Options';
+import 'app/view/map/Scoreboard';
 
 /**
  * @TODO clean this mess up
@@ -25,23 +25,23 @@ Ext.define('CJ.view.map.Block', {
          * @param {Number} id
          */
         toViewState(id) {
-            const block = CJ.byDocId(id)
+            const block = CJ.byDocId(id);
             if (block)
-                return block.setState('view')
-            CJ.LoadBar.run()
+                return block.setState('view');
+            CJ.LoadBar.run();
             CJ.Block.load(id, {
                 success(responce) {
-                    const block = Ext.factory(responce.ret)
+                    const block = Ext.factory(responce.ret);
                     if (block.isMapBlock)
-                        return block.setState('view')    // can be a private block
+                        return block.setState('view');    // can be a private block
                     // can be a private block
-                    CJ.app.redirectTo(block.getLocalUrl(), true)
-                    block.popup()
+                    CJ.app.redirectTo(block.getLocalUrl(), true);
+                    block.popup();
                 },
                 callback() {
-                    CJ.LoadBar.finish()
+                    CJ.LoadBar.finish();
                 }
-            })
+            });
         }
     },
     config: {
@@ -118,9 +118,9 @@ Ext.define('CJ.view.map.Block', {
      * Initializes component.
      */
     initialize(...args) {
-        this.superclass.initialize.apply(this, args)
-        this.tapListeners = Ext.clone(this.tapListeners)
-        this.tapListeners['.d-cover'] = 'onCoverTap'
+        this.superclass.initialize.apply(this, args);
+        this.tapListeners = Ext.clone(this.tapListeners);
+        this.tapListeners['.d-cover'] = 'onCoverTap';
     },
     /**
      * Applies tags.
@@ -129,28 +129,24 @@ Ext.define('CJ.view.map.Block', {
      */
     applyTags(tags) {
         if (Ext.isString(tags))
-            tags = tags.split(' ')
-        return tags
+            tags = tags.split(' ');
+        return tags;
     },
     /**
      * Renders the tpl, preloads the cover image.
      */
     updateData() {
         if (this.isDestroyed)
-            return
-
-        const el = this.innerElement
-        const icon = this.getIcon()
-        const cover = icon || this.getImage()
-
+            return;
+        const el = this.innerElement, icon = this.getIcon(), cover = icon || this.getImage();
         el.setHtml(this.getTpl().apply({
             cover,
             title: this.getTitle() || CJ.t(this.getDefaultTitle(), true),
             description: this.getDescription(),
             completeness: this.getCompleteness(),
             showCompleteness: this.getShowCompleteness() && CJ.User.isFGA()
-        }))
-        this.renderCoverImage(cover)
+        }));
+        this.renderCoverImage(cover);
     },
     /**
      * Applies nodes color.
@@ -158,7 +154,7 @@ Ext.define('CJ.view.map.Block', {
      * @returns {String}
      */
     applyNodeColor(color) {
-        return color || this.getDefaultNodeColor()
+        return color || this.getDefaultNodeColor();
     },
     /**
      * Applies edges color.
@@ -166,7 +162,7 @@ Ext.define('CJ.view.map.Block', {
      * @returns {String}
      */
     applyEdgeColor(color) {
-        return color || this.getDefaultEdgeColor()
+        return color || this.getDefaultEdgeColor();
     },
     /**
      * Updates an editor.
@@ -174,7 +170,7 @@ Ext.define('CJ.view.map.Block', {
      */
     updateEditor(editor) {
         if (editor && editor.getBlock() != this)
-            editor.setBlock(this)
+            editor.setBlock(this);
     },
     /**
      * Updates a state.
@@ -182,13 +178,13 @@ Ext.define('CJ.view.map.Block', {
      * @param {String} current
      */
     updateState(state, current) {
-        const stateContainer = this.getStateContainer()
+        const stateContainer = this.getStateContainer();
         if (current && stateContainer)
-            stateContainer.hide()
+            stateContainer.hide();
         if (!state)
-            return this.setStateContainer(null)
-        const stateHandlerName = CJ.tpl('to{0}State', CJ.capitalize(state)), stateHandler = this[stateHandlerName]
-        Ext.callback(stateHandler, this)
+            return this.setStateContainer(null);
+        const stateHandlerName = CJ.tpl('to{0}State', CJ.capitalize(state)), stateHandler = this[stateHandlerName];
+        Ext.callback(stateHandler, this);
     },
     /**
      * Updates a state container.
@@ -196,35 +192,35 @@ Ext.define('CJ.view.map.Block', {
      */
     updateStateContainer(container) {
         if (!container)
-            return
-        const state = this.getState(), handlerName = CJ.tpl('from{0}State', CJ.capitalize(state)), handler = this[handlerName]
+            return;
+        const state = this.getState(), handlerName = CJ.tpl('from{0}State', CJ.capitalize(state)), handler = this[handlerName];
         if (!Ext.isFunction(handler))
-            return
+            return;
         container.on({
             hide: handler,
             scope: this,
             single: true
-        })
+        });
     },
     /**
      * Shows the edit state container.
      */
     toEditState() {
         if (this.getEditor())
-            return
+            return;
         CJ.DeferredScriptLoader.loadScript({
             scriptName: 'vis',
             success: this.onVisLoaded,
             scope: this,
             args: ['edit']
-        })
+        });
     },
     /**
      * Callback that will be called after hiding of the edit state container.
      */
     fromEditState() {
         if (this.getState() == 'edit')
-            this.setState(null)
+            this.setState(null);
     },
     /**
      * Shows the view state container.
@@ -235,18 +231,18 @@ Ext.define('CJ.view.map.Block', {
             success: this.onVisLoaded,
             scope: this,
             args: ['view']
-        })
+        });
     },
     onVisLoaded(state) {
-        this.setStateContainer(CJ.view.map[state].Container.popup({ block: this }))
+        this.setStateContainer(CJ.view.map[state].Container.popup({ block: this }));
     },
     /**
      * Callback that will be called after hiding of the view state container.
      */
     fromViewState() {
         if (this.getState() == 'view')
-            this.setState(null)
-        CJ.fire('block.completeness.change', this)
+            this.setState(null);
+        CJ.fire('block.completeness.change', this);
     },
     /**
      * @param {Object} options
@@ -258,28 +254,28 @@ Ext.define('CJ.view.map.Block', {
             tags: this.getTags(),
             staticTags: [CJ.User.get('user')],
             licensingOptions: this.getLicensingOptions()
-        })
-        return this.superclass.publish.apply(this, args)
+        });
+        return this.superclass.publish.apply(this, args);
     },
     /**
      * Callback that will be called after updating of settings.
      * @param {Object} values
      */
     doPublish(values) {
-        const docVisibility = values.docVisibility
-        delete values.docVisibility
-        this.setCategories(values.categories)
-        this.setTags(values.tags)
-        this.saveWithVisibility(docVisibility)
+        const docVisibility = values.docVisibility;
+        delete values.docVisibility;
+        this.setCategories(values.categories);
+        this.setTags(values.tags);
+        this.saveWithVisibility(docVisibility);
     },
     /**
      * Saves the map block.
      */
     save() {
-        this.applyChanges()
-        this.setState(null)
-        this.setSaving(true)
-        CJ.StreamHelper.adjustContaining(this)
+        this.applyChanges();
+        this.setState(null);
+        this.setSaving(true);
+        CJ.StreamHelper.adjustContaining(this);
         CJ.request({
             rpc: {
                 model: 'Document',
@@ -289,13 +285,13 @@ Ext.define('CJ.view.map.Block', {
             scope: this,
             success: this.onSaveSuccess,
             callback: this.onSaveCallback
-        })
+        });
     },
     /**
      * Serializes the map block.
      * @returns {Object}
      */
-    serialize(mode='server') {
+    serialize(mode undefined 'server') {
         const data = {
             xtype: 'view-map-block',
             docId: this.getDocId() || CJ.Guid.generatePhantomId(),
@@ -316,46 +312,46 @@ Ext.define('CJ.view.map.Block', {
             edgeColor: this.getEdgeColor(),
             licensingOptions: this.getLicensingOptions(),
             licenseInfo: this.getLicenseInfo()
-        }
+        };
         if (mode == 'server')
-            return data
+            return data;
         Ext.apply(data, {
             comments: this.getComments(),
             reuseInfo: this.getReuseInfo(),
             reusedCount: this.getReuseCount()
-        })
-        return data
+        });
+        return data;
     },
     /**
      * Applies changes.
      */
     applyChanges() {
-        const editor = this.getEditor()
+        const editor = this.getEditor();
         if (editor)
-            editor.applyChanges()
+            editor.applyChanges();
     },
     /**
      * Will be called when new map block is saved.
      */
     onBlockCreated(...args) {
-        this.superclass.onBlockCreated.apply(this, args)
+        this.superclass.onBlockCreated.apply(this, args);
         if (this.hasPageTags())
-            return CJ.feedback(CJ.t('activity-created'))
-        const tags = CJ.Utils.tagsToPath(this.getTags())
+            return CJ.feedback(CJ.t('activity-created'));
+        const tags = CJ.Utils.tagsToPath(this.getTags());
         CJ.feedback({
             message: CJ.t('activity-created-with-check-out'),
             duration: 5000,
             tap(e) {
                 if (e.getTarget('.d-button'))
-                    CJ.app.redirectTo(tags)
+                    CJ.app.redirectTo(tags);
             }
-        })
+        });
     },
     /**
      * @return {String}
      */
     getLocalUrl() {
-        return CJ.tpl('!mp/{0}', this.getDocId())
+        return CJ.tpl('!mp/{0}', this.getDocId());
     },
     /**
      * Shows the map options.
@@ -370,6 +366,6 @@ Ext.define('CJ.view.map.Block', {
                 xtype: 'view-map-options',
                 block: this
             }
-        })
+        });
     }
-})
+});

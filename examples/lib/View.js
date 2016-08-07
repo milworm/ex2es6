@@ -1,4 +1,5 @@
 import 'Ext/Component'
+import 'Ext/dom/Element'
 
 /**
  * @class CJ.core.ui.View
@@ -34,7 +35,8 @@ Ext.define('CJ.core.ui.View', {
 	 * @return {undefined}
 	 */
     sayHello(config) {
-        const firstName = config.firstName, lastName = config.lastName
+        const firstName = config.firstName
+        const lastName = config.lastName
         alert(`${ firstName } ${ lastName }!`)
     }
 })
