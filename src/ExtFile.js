@@ -237,7 +237,7 @@ export default class ExtFile {
 
 		let {callee} = node
 
-		if(callee.property.name != 'callParent')
+		if(! (callee.property && callee.property.name == 'callParent'))
 			return
 
 		let {object} = callee
@@ -280,6 +280,8 @@ export default class ExtFile {
 				type: 'Identifier',
             	name: 'args'
 			}
+		else
+			params.pop()
 	}
 
 	/**

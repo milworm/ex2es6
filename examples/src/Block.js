@@ -346,9 +346,8 @@ Ext.define('CJ.view.map.Block', {
     /**
      * Callback that will be called after updating of settings.
      * @param {Object} values
-     * @param {CJ.view.publish.Carousel} component
      */
-    doPublish: function(values, component) {
+    doPublish: function(values) {
         var docVisibility = values.docVisibility;
         delete values.docVisibility;
 
