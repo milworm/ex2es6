@@ -1,7 +1,7 @@
 const fs = require('fs')
-const esprima = require("esprima")
-const estraverse = require("estraverse")
-const escodegen = require("escodegen")
+const espree = require('espree')
+const estraverse = require('estraverse')
+const escodegen = require('escodegen')
 const _ = require('lodash')
 const lebab = require('lebab')
 
@@ -27,12 +27,15 @@ export default class ExtFile {
 		let es5code = fs.readFileSync(file.path, "utf8")
 		let transformer = new lebab.Transformer(transformsMap)
 		let es6code = transformer.run(es5code)
-		this._ast = esprima.parse(es6code, {
-			comment: true,
+		let ast = espree.parse(es6code, {
 			range: true,
-			tokens: true
+			loc: true,
+			attachComment: true,
+			tokens: true,
+			ecmaVersion: 6
 		})
-		this._ast = escodegen.attachComments(this._ast, this._ast.comments, this._ast.tokens)
+
+		this._ast = ast
 		this._resultAst = {}
 	}
 
@@ -98,10 +101,10 @@ export default class ExtFile {
 		let keys = _.keyBy(classDefinition, 'key.name')
 
 		if(! keys.extend)
-			return 'Ext.Base'
+			return null
 
 		let {value} = keys.extend.value
-		_.remove(classDefinition, keys.extend)
+		// _.remove(classDefinition, keys.extend)
 		return value
 	}
 
@@ -155,6 +158,11 @@ export default class ExtFile {
 	 */
 	_createImportDeclarations(classDefinition) {
 		let requires = this._extractRequires(classDefinition)
+		let superClass = this._extractSuperClass(classDefinition)
+
+		if(superClass)
+			requires.unshift(superClass)
+
 		return _.map(requires, src => this._createImportDeclaration(src))
 	}
 
@@ -179,9 +187,7 @@ export default class ExtFile {
 	 * @param {Object} config.classDefinition
 	 * @return {Object}
 	 */
-	_createClass(config) {
-		let {classDefinition, className, node} = config
-
+	_createClass({classDefinition, className, node}) {
 		// this._functionsToMethods(classDefinition)
 		let requires = this._createImportDeclarations(classDefinition)
 		let body = [requires]
@@ -222,6 +228,6 @@ export default class ExtFile {
             }
         })
 
-        return escodegen.generate(this._resultAst)
+        return escodegen.generate(this._resultAst, {comment: true})
 	}
 }
