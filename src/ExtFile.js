@@ -197,12 +197,89 @@ export default class ExtFile {
 
 		body.push(node)
 		body = _.flattenDeep(body)
-
+		this._parseCallParent(classDefinition)
         this._resultAst = {
         	"type": "Program",
 		    "body": body,
 		    "sourceType": "module"
         }
+	}
+
+	/**
+	 * @param {Object} classDefinition
+	 */
+	_parseCallParent(classDefinition) {
+		let properties = _.keyBy(classDefinition, 'key.name')
+
+		_.each(properties, (property, method) => {
+			if(property.value.type != 'FunctionExpression')
+				return
+
+			let {params} = property.value
+
+			estraverse.traverse(property.value, {
+	            enter: (node, parent) => {
+	            	this._replaceCallParent(method, node, parent, params)
+	            }
+	        })
+				
+		})
+	}
+
+	/**
+	 * @param {String} method
+	 * @param {Object} node
+	 * @param {Object} parent
+	 */
+	_replaceCallParent(method, node, parent, params) {
+		if(node.type != 'CallExpression')
+			return
+
+		let {callee} = node
+
+		if(callee.property.name != 'callParent')
+			return
+
+		let {object} = callee
+		// transform: object.callParent(arguments) -> object.superclass.callParent(arguments)
+		callee.object = {
+    		type: 'MemberExpression',
+    		object: {
+    			type: 'MemberExpression',
+    			object: object,
+	            property: {
+	                type: 'Identifier',
+	                name: 'superclass'
+	            }
+    		},
+            property: {
+                type: 'Identifier',
+                name: method
+            }
+    	}
+
+        callee.property = {
+        	type: 'Identifier',
+            name: 'apply'
+        }
+
+		params.push({
+    		type: 'RestElement',
+            argument: {
+                type: 'Identifier',
+                name: 'args'
+            }
+		})
+
+		let [firstArg={}] = node.arguments || []
+		node.arguments.unshift(object)
+
+		// callParent(arguments)
+		if(firstArg.name == 'arguments')
+			node.arguments.push({
+				type: 'Identifier',
+            	name: 'args'
+			})
 	}
 
 	/**
