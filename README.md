@@ -2,7 +2,7 @@
 ExtJS to ES6 code transformation
 
 ## Before
-```
+```js
 /**
  * @class CJ.core.ui.View
  */
@@ -47,7 +47,7 @@ Ext.define('CJ.core.ui.View', {
 ```
 
 ## After
-```
+```js
 import 'Ext/Component'
 
 /**
