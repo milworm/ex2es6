@@ -118,7 +118,7 @@ Ext.define('CJ.view.map.Block', {
      * Initializes component.
      */
     initialize(...args) {
-        this.superclass.initialize.apply(this, args);
+        this.callParent(args);
         this.tapListeners = Ext.clone(this.tapListeners);
         this.tapListeners['.d-cover'] = 'onCoverTap';
     },
@@ -255,7 +255,7 @@ Ext.define('CJ.view.map.Block', {
             staticTags: [CJ.User.get('user')],
             licensingOptions: this.getLicensingOptions()
         });
-        return this.superclass.publish.apply(this, args);
+        return this.callParent(args);
     },
     /**
      * Callback that will be called after updating of settings.
@@ -291,7 +291,7 @@ Ext.define('CJ.view.map.Block', {
      * Serializes the map block.
      * @returns {Object}
      */
-    serialize(mode undefined 'server') {
+    serialize(mode = 'server') {
         const data = {
             xtype: 'view-map-block',
             docId: this.getDocId() || CJ.Guid.generatePhantomId(),
@@ -334,7 +334,7 @@ Ext.define('CJ.view.map.Block', {
      * Will be called when new map block is saved.
      */
     onBlockCreated(...args) {
-        this.superclass.onBlockCreated.apply(this, args);
+        this.callParent(args);
         if (this.hasPageTags())
             return CJ.feedback(CJ.t('activity-created'));
         const tags = CJ.Utils.tagsToPath(this.getTags());

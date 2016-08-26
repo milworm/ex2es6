@@ -5,17 +5,22 @@ const escodegen = require('escodegen')
 const _ = require('lodash')
 const lebab = require('lebab')
 
+/**
+ * regexp: \(([^\s]+)(\sundefined\s)([^,\)]+)\)
+ * replace: ($1=$3)
+ */
+
 const transformsMap = {
-  'class': true,
-  'template': true,
-  'arrow': true,
-  'let': true,
-  'default-param': true,
-  'arg-spread': true,
-  'obj-method': true,
-  'obj-shorthand': true,
-  'no-strict': true,
-  'commonjs': true,
+	'class': true,
+	'template': true,
+	'arrow': true,
+	'let': true,
+	'default-param': true,
+	'arg-spread': true,
+	'obj-method': true,
+	'obj-shorthand': true,
+	'no-strict': true,
+	'commonjs': true,
 }
 
 export default class ExtFile {
@@ -109,32 +114,6 @@ export default class ExtFile {
 	}
 
 	/**
-	 * @return {Object}
-	 */
-	_createClassDeclaration({className, classDefinition}) {
-		this._functionsToMethods(classDefinition)
-		let superClassName = this._extractSuperClass(classDefinition)
-
-		return {
-            "type": "ExportDefaultDeclaration",
-            "declaration": {
-                "type": "ClassDeclaration",
-                "id": {
-                	"name": className.split('.').pop()
-                },
-                "superClass": {
-                    "type": "Identifier",
-                    "name": superClassName
-                },
-                "body": {
-                    "type": "ClassBody",
-                    "body": classDefinition
-                }
-            }
-        }
-	}
-
-	/**
 	 * @param {String} src
 	 * @return {Object}
 	 */
@@ -143,13 +122,13 @@ export default class ExtFile {
 		path = path.replace('CJ', 'app')
 
 		return {
-            "type": "ImportDeclaration",
-            "specifiers": [],
-            "source": {
-                "type": "Literal",
-                "value": path
-            }
-        }
+			"type": "ImportDeclaration",
+			"specifiers": [],
+			"source": {
+				"type": "Literal",
+				"value": path
+			}
+		}
 	}
 
 	/**
@@ -172,11 +151,11 @@ export default class ExtFile {
 	 */
 	_createExportDefault(className) {
 		return {
-			"type": "ExportDefaultDeclaration",
-            "declaration": {
-                "type": "Identifier",
-                name: className
-            }
+			type: "ExportDefaultDeclaration",
+			declaration: {
+				type: "Identifier",
+				name: className
+			}
 		}
 	}
 
@@ -198,11 +177,11 @@ export default class ExtFile {
 		body.push(node)
 		body = _.flattenDeep(body)
 		this._parseCallParent(classDefinition)
-        this._resultAst = {
-        	"type": "Program",
-		    "body": body,
-		    "sourceType": "module"
-        }
+		this._resultAst = {
+			type: "Program",
+			body: body,
+			sourceType: "module"
+		}
 	}
 
 	/**
@@ -216,13 +195,27 @@ export default class ExtFile {
 				return
 
 			let {params} = property.value
+			let newParams = []
+			let newDefaults = []
+
+			params.forEach(param => {
+				if(param.type == 'AssignmentPattern') {
+					let {left, right} = param
+					newParams.push(left)
+					newDefaults.push(right)
+				} else {
+					newParams.push(param)
+				}
+			})
+
+			property.value.params = newParams
+			property.value.defaults = newDefaults
 
 			estraverse.traverse(property.value, {
-	            enter: (node, parent) => {
-	            	this._replaceCallParent(method, node, parent, params)
-	            }
-	        })
-				
+				enter: (node, parent) => {
+					this._replaceCallParent(method, node, parent, property.value.params)
+				}
+			})
 		})
 	}
 
@@ -241,47 +234,35 @@ export default class ExtFile {
 			return
 
 		let {object} = callee
-		// transform: object.callParent(arguments) -> object.superclass.callParent(arguments)
-		callee.object = {
-    		type: 'MemberExpression',
-    		object: {
-    			type: 'MemberExpression',
-    			object: object,
-	            property: {
-	                type: 'Identifier',
-	                name: 'superclass'
-	            }
-    		},
-            property: {
-                type: 'Identifier',
-                name: method
-            }
-    	}
+		let args = node.arguments
 
-        callee.property = {
-        	type: 'Identifier',
-            name: 'apply'
-        }
+		if(! args.length)
+			return 
 
-		params.push({
-    		type: 'RestElement',
-            argument: {
-                type: 'Identifier',
-                name: 'args'
-            }
-		})
-
-		let [firstArg={}] = node.arguments || []
-		node.arguments.unshift(object)
-
-		// callParent(arguments)
-		if(firstArg.name == 'arguments')
-			node.arguments[1] = {
-				type: 'Identifier',
-            	name: 'args'
+		if(args[0].name == 'arguments') {
+			if(args[0].type == 'ArrayExpression') {
+				args[0].push({
+					type: 'SpreadElement',
+					argument: {
+						type: 'Identifier',
+						name: 'args'
+					}
+				})
+			} else {
+				node.arguments = [{
+					type: 'Identifier',
+					name: 'args'
+				}]
 			}
-		else
-			params.pop()
+
+			params.push({
+				type: 'RestElement',
+				argument: {
+					type: 'Identifier',
+					name: 'args'
+				}
+			})
+		}
 	}
 
 	/**
@@ -290,7 +271,7 @@ export default class ExtFile {
 	_createNewLine() {
 		return {
 			type: 'Identifier',
-            name: '\n'
+			name: '\n'
 		}
 	}
 
@@ -299,14 +280,17 @@ export default class ExtFile {
 	 */
 	convert() {
 		estraverse.traverse(this._ast, {
-            enter: (node, parent) => {
-            	let classInfo = this._extractClassInfo(node)
+			enter: (node, parent) => {
+				let classInfo = this._extractClassInfo(node)
 
-            	if(classInfo)
-            		this._createClass(classInfo)
-            }
-        })
+				if(classInfo)
+					this._createClass(classInfo)
+			}
+		})
 
-        return escodegen.generate(this._resultAst, {comment: true})
+		if(! this._resultAst.type)
+			this._resultAst = this._ast // not a class
+
+		return escodegen.generate(this._resultAst, {comment: true})
 	}
 }

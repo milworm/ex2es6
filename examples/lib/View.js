@@ -1,5 +1,5 @@
-import 'Ext/Component'
-import 'Ext/dom/Element'
+import 'Ext/Component';
+import 'Ext/dom/Element';
 
 /**
  * @class CJ.core.ui.View
@@ -10,23 +10,23 @@ Ext.define('CJ.core.ui.View', {
 	 * @return {Object}
 	 */
     getElementConfig(...args) {
-        this.superclass.getElementConfig.apply(this, args)
+        this.callParent(args);
     },
     /**
 	 * @param {Number} id
 	 * @return {Number}
 	 */
-    applyId(id) {
-        id = ++this.id
-        return this.superclass.applyId.apply(this, [id])
+    applyId(id, ...args) {
+        id = ++this.id;
+        return this.callParent(args);
     },
     /**
 	 * @param {String} param
 	 * @return {String}
 	 */
-    applyId2(param) {
-        const me = this
-        return me.superclass.applyId2.apply(me, [param])
+    applyId2(param = 33, param2 = 334) {
+        const me = this;
+        return me.callParent([param]);
     },
     /**
 	 * @param {Object} config
@@ -35,8 +35,8 @@ Ext.define('CJ.core.ui.View', {
 	 * @return {undefined}
 	 */
     sayHello(config) {
-        const firstName = config.firstName
-        const lastName = config.lastName
-        alert(`${ firstName } ${ lastName }!`)
+        const firstName = config.firstName;
+        const lastName = config.lastName;
+        alert(`${ firstName } ${ lastName }!`);
     }
-})
+});

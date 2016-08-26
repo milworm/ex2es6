@@ -23,13 +23,15 @@ Ext.define('CJ.core.ui.View', {
 	 */
 	applyId: function(id) {
 		id = ++ this.id
-		return this.callParent([id]);
+		return this.callParent(arguments);
 	},
 	/**
 	 * @param {String} param
 	 * @return {String}
 	 */
-	applyId2: function(param) {
+	applyId2: function(param, param2) {
+		param = param || 33
+		param2 = param2 || 334
 		var me = this
 		return me.callParent([param]);
 	},
