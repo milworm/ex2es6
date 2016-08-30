@@ -16,10 +16,7 @@ gulp.task('default', () => {
 })
 
 gulp.task('convert', () => {
-	return gulp.src('./examples/src/class.js')
-	//return gulp.src('/Users/ruslan/www/mainline/app/**/*.js')
-	//return gulp.src('/Users/ruslan/www/mainline/app.js')
+	return gulp.src('./examples/src/class1.js')
 		.pipe(ext2es6())
 		.pipe(gulp.dest('./examples/lib/'))
-		//.pipe(gulp.dest('/Users/ruslan/www/mainline/es62/'))
 });

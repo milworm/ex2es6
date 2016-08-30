@@ -4,10 +4,22 @@ const estraverse = require('estraverse')
 const escodegen = require('escodegen')
 const _ = require('lodash')
 const lebab = require('lebab')
+const esformatter = require('esformatter')
+const esformatterVarEach = require('esformatter-var-each')
+const esStripSemicolons = require('es-strip-semicolons')
+const esformatterCollapseObjects = require('esformatter-collapse-objects')
+
+
+// label makes mistakes with default-values, 
+// so the following regexps should be used to find all dangerous places
 
 /**
  * regexp: \(([^\s]+)(\sundefined\s)([^,\)]+)\)
  * replace: ($1=$3)
+ */
+
+/** 
+ * [a-zA-Z]+\(.*\s\=\s[^\)\{\s]+\)\s\{
  */
 
 const transformsMap = {
@@ -37,7 +49,8 @@ export default class ExtFile {
 			loc: true,
 			attachComment: true,
 			tokens: true,
-			ecmaVersion: 6
+			ecmaVersion: 6,
+			sourceType: 'module'
 		})
 
 		this._ast = ast
@@ -167,20 +180,25 @@ export default class ExtFile {
 	 * @return {Object}
 	 */
 	_createClass({classDefinition, className, node}) {
-		// this._functionsToMethods(classDefinition)
-		let requires = this._createImportDeclarations(classDefinition)
-		let body = [requires]
+		this._functionsToMethods(classDefinition)
 
-		if(requires.length)
-			body.push(this._createNewLine())
+		let ast = this._ast
+		let item = _.findLast(ast.body, ({type}) => type == 'ImportDeclaration')
 
-		body.push(node)
-		body = _.flattenDeep(body)
-		this._parseCallParent(classDefinition)
-		this._resultAst = {
-			type: "Program",
-			body: body,
-			sourceType: "module"
+		if(item) {
+			// it's already converted class, so we don't need to parse requires-property
+			ast.body.splice(ast.body.indexOf(item) + 1, 0, this._createNewLine())
+			this._resultAst = ast
+		} else {
+			let requires = this._createImportDeclarations(classDefinition)
+			let body = [requires]
+
+			if(requires.length)
+				body.push(this._createNewLine())
+
+			body.push(node)
+			body = _.flattenDeep(body)
+			this._parseCallParent(classDefinition)
 		}
 	}
 
@@ -239,29 +257,15 @@ export default class ExtFile {
 		if(! args.length)
 			return 
 
-		if(args[0].name == 'arguments') {
-			if(args[0].type == 'ArrayExpression') {
-				args[0].push({
-					type: 'SpreadElement',
-					argument: {
-						type: 'Identifier',
-						name: 'args'
-					}
-				})
-			} else {
-				node.arguments = [{
-					type: 'Identifier',
-					name: 'args'
-				}]
-			}
+		if(params.length < 2)
+			return 
 
-			params.push({
-				type: 'RestElement',
-				argument: {
-					type: 'Identifier',
-					name: 'args'
-				}
-			})
+		if(args[0].name == 'args') {
+			params = _.filter(params, item => item.name != 'args')
+			node.arguments = [{
+				type: 'ArrayExpression',
+				elements: [...params]
+			}]
 		}
 	}
 
@@ -291,6 +295,46 @@ export default class ExtFile {
 		if(! this._resultAst.type)
 			this._resultAst = this._ast // not a class
 
-		return escodegen.generate(this._resultAst, {comment: true})
+		let code = escodegen.generate(this._resultAst, {
+			comment: true,
+			format: {
+				indent: {
+					style: "\t",
+					base: 0,
+					semicolons: false,
+					adjustMultilineComment: true
+				}
+			}
+		})
+
+		esformatter.register(esformatterVarEach)
+		esformatter.register(esformatterCollapseObjects)
+		esformatter.register({
+			transformAfter: esStripSemicolons
+		})
+
+		return esformatter.format(code, {
+			indent: {
+				value: "\t"
+			},
+			collapseObjects: {
+				 "ObjectExpression": {
+			      "maxLineLength": 80,
+			      "maxKeys": 3,
+			      "maxDepth": 2,
+			      "forbidden": [
+			        "FunctionExpression"
+			      ]
+			    },
+			    "ArrayExpression": {
+			      "maxLineLength": 80,
+			      "maxKeys": 3,
+			      "maxDepth": 2,
+			      "forbidden": [
+			        "FunctionExpression"
+			      ]
+			    }
+			}
+		})
 	}
 }

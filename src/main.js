@@ -2,11 +2,18 @@ const through = require("through2");
 const ExtFile = require("./ExtFile").default;
 
 export default (config) => {
-	return through.obj(function(file, encoding, callback) {
-		let extFile = new ExtFile(file)
-		let code = extFile.convert()
+	let code = null
 
-		file.contents = new Buffer(code)
+	return through.obj(function(file, encoding, callback) {
+		console.log(`processing: ${file.path}`)
+
+		try {
+			code = new ExtFile(file).convert()
+			file.contents = new Buffer(code)
+		} catch(e) {
+			console.log(e)
+		}			
+
 		this.push(file)
 		callback()
 	});
